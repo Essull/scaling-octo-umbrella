@@ -112,14 +112,10 @@
     document.getElementById('room_code').append(`${roomId}`);
 
     const cookies = document.cookie.split(';');
-      console.log(document.cookie.split(';'))
       // Iterate through each cookie
       for (let cookie of cookies) {
-        console.log(cookie)
           // Trim whitespace and split into key-value pair
           const [key, value] = cookie.trim().split('=');
-          console.log(key);
-          
           if (key == 'loggedIn321') {
               username = value;
           }
@@ -132,11 +128,9 @@
       createBoard(board);
       const newMessage = document.createElement('p');
       document.getElementById('playercolor').append(`${playerC}`);
-      console.log(document.getElementById('playercolor').innerHTML);
     });
 
     socket.on('userLeft', function(data) {
-      console.log(data.message);
       const newMessage = document.createElement('p');
       const chatBox = document.getElementById('chat-box');
       newMessage.textContent= `${data.message}`;
@@ -145,7 +139,6 @@
 
     // Listen for the game state update and update the board
     socket.on('gameState', (board) => {
-      console.log(board);
     
       // Update the board with the new state
       updateBoard(board);
@@ -182,7 +175,6 @@
     // Listen for player joining event
     socket.on('playerJoined', (color) => {
       const chatBox = document.getElementById('chat-box');
-      console.log(chatBox)
       const newMessage = document.createElement('p');
       newMessage.textContent= `${color} player joined the game.`
       chatBox.appendChild( newMessage)
@@ -222,7 +214,6 @@ function animatePiecesFallingOff() {
 
   // Combine both NodeLists into an array
   let cells = [...redCells, ...yellowCells];
-  console.log(cells);
 
   // Animate each cell
   cells.forEach((cell) => {
@@ -353,7 +344,6 @@ document.getElementById('chat-input').addEventListener('keypress', (e) => {
     }
 
     function updateBoard(board) {
-        console.log('updating board');
       const cells = document.querySelectorAll('.cell');
       cells.forEach((cell) => {
         const row = cell.dataset.row;
@@ -400,21 +390,15 @@ document.getElementById('chat-input').addEventListener('keypress', (e) => {
     function hasLoggedInCookie() {
       // Retrieve all cookies as a single string
       const cookies = document.cookie.split(';');
-      console.log(document.cookie.split(';'))
       // Iterate through each cookie
       for (let cookie of cookies) {
-        console.log(cookie)
           // Trim whitespace and split into key-value pair
           const [key, value] = cookie.trim().split('=');
-          console.log(key);
           
           if (key == 'loggedIn321') {
-              console.log('Cookie found with value:', value);
               return true; // Cookie exists
           }
       }
-      
-      console.log('Cookie "loggedIn321" not found.');
       return false; // Cookie not found
   }
 
