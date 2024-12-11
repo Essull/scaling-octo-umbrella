@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatroom</title>
+  <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f3f3f3;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      background: #ffffff;
+      border-bottom: 2px solid #ddd;
+    }
+
+    #chat p {
+      margin: 5px 0;
+    }
+
+    #message-form {
+      display: flex;
+      border-top: 2px solid #ddd;
+    }
+
+    #message-form input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-right: 2px solid #ddd;
+    }
+
+    #message-form button {
+      padding: 10px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    #message-form button:hover {
+      background-color: #0056b3;
+    }
+    ul {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #333;
+    }
+    
+    li {
+      float: left;
+    }
+    
+    li a {
+      display: block;
+      color: white;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+    }
+    
+    /* Change the link color to #111 (black) on hover */
+    li a:hover {
+      background-color: #111;
+    }
+  </style>
+</head>
+<body>
+  <ul>
+    <li><a href="">Chatroom</a></li>
+    <li><a href="game">Game</a></li>
+  </ul>
+  <div id="chat"></div>
+  <form id="message-form">
+    <input id="message-input" type="text" placeholder="Type a message..." autocomplete="off" />
+    <button type="submit">Send</button>
+  </form>
+
+  <script>
+    const socket = io('http://localhost:3005');//TODO: change to domain when uploaded on server
+
+    const chat = document.getElementById('chat');
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+
+    var username='';
+const cookies = document.cookie.split(';');
+      console.log(document.cookie.split(';'))
+      // Iterate through each cookie
+      for (let cookie of cookies) {
+        console.log(cookie)
+          // Trim whitespace and split into key-value pair
+          const [key, value] = cookie.trim().split('=');
+          console.log(key);
+          
+          if (key == 'loggedIn321') {
+              username = value;
+          }
+      }
+
+    // Display a message in the chat
+    function displayMessage(message, userN) {
+      const p = document.createElement('p');
+      p.textContent = `${userN}: ${message}`;
+      chat.appendChild(p);
+      chat.scrollTop = chat.scrollHeight; // Scroll to the bottom
+    }
+
+    // Listen for messages from the server
+    socket.on('message', (message, username) => {
+      if(username == undefined){
+        username= "Server"
+      }
+      displayMessage(message, username);
+    });
+
+    // Handle form submission
+    messageForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const message = messageInput.value.trim();
+      if (message) {
+        socket.emit('chatMessage', message, username); // Send message to the server
+        messageInput.value = ''; // Clear input field
+      }
+    });
+
+    function hasLoggedInCookie() {
+      // Retrieve all cookies as a single string
+      const cookies = document.cookie.split(';');
+      console.log(document.cookie.split(';'))
+      // Iterate through each cookie
+      for (let cookie of cookies) {
+        console.log(cookie)
+          // Trim whitespace and split into key-value pair
+          const [key, value] = cookie.trim().split('=');
+          console.log(key);
+          
+          if (key == 'loggedIn321') {
+              console.log('Cookie found with value:', value);
+              return true; // Cookie exists
+          }
+      }
+      
+      console.log('Cookie "loggedIn321" not found.');
+      return false; // Cookie not found
+  }
+  
+  // Example Usage
+  if (hasLoggedInCookie()) {
+      console.log('User has the loggedin123 cookie.');
+  } else {
+      console.log('User does not have the loggedin123 cookie.');
+      window.location.href = '/login';
+  }
+  </script>
+</body>
+</html>

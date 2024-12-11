@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connect Four</title>
+  <style>
+    /* Basic styling for the board */
+    #game-board {
+      display: grid;
+      grid-template-columns: repeat(7, 50px);
+      grid-template-rows: repeat(6, 50px);
+      gap: 5px;
+    }
+    .cell {
+      width: 50px;
+      height: 50px;
+      background-color: #f1f1f1;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+    ul {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #333;
+    }
+    
+    li {
+      float: left;
+    }
+    
+    li a {
+      display: block;
+      color: white;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+    }
+    
+    /* Change the link color to #111 (black) on hover */
+    li a:hover {
+      background-color: #111;
+    }
+    .red {
+      background-color: red;
+    }
+    .yellow {
+      background-color: yellow;
+    }
+    #turn-indicator {
+      font-size: 20px;
+      margin-top: 20px;
+    }
+        .fall-off {
+          animation: fallOff 1s forwards; /* 1s duration for the animation */
+        }
+      
+        @keyframes fallOff {
+          from {
+            transform: translateY(0); /* Start at current position */
+          }
+          to {
+            transform: translateY(100vh); /* Move down off-screen */
+          }
+        }
+
+        @keyframes animateCellIn {
+          0% {
+            transform: translateY(-100vh);  /* Start off-screen */
+            opacity: 0;                     /* Start invisible */
+          }
+          100% {
+            transform: translateY(0);       /* Final position on the grid */
+            opacity: 1;                     /* Fully visible */
+          }
+        }
+      </style>
+  </style>
+</head>
+<body>
+  <ul>
+    <li><a href="/">Chatroom</a></li>
+    <li><a href="game">Game</a></li>
+  </ul>
+  <h1>Connect Four</h1>
+  <h2 id="playercolor"></h2>
+  <h3 id="room_code"></h3>
+  <div id="game-board"></div>
+  <div id="turn-indicator">It’s Red’s turn</div>
+  <button id="reset" disabled>Reset Game</button>
+  <div id="game-over-message" style="display: none;"></div>
+  <div id="chat-container">
+    <div id="chat-box" style="height: 200px; overflow-y: scroll; border: 1px solid #ccc; margin-bottom: 10px;"></div>
+    <input type="text" id="chat-input" placeholder="Type a message..." style="width: 80%;" />
+    <button id="send-chat" style="width: 15%;">Send</button>
+  </div>
+
+  <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+  <script>
+    const socket = io('http://localhost:3000');//TODO: change to domain when uploaded on server
+    let roomId = prompt('Enter a room ID to join:');
+    var i = 0;
+    var username = '';
+    let previousBoardState = [];
+    
+    
+    document.getElementById('room_code').append(`${roomId}`);
+
+    const cookies = document.cookie.split(';');
+      console.log(document.cookie.split(';'))
+      // Iterate through each cookie
+      for (let cookie of cookies) {
+        console.log(cookie)
+          // Trim whitespace and split into key-value pair
+          const [key, value] = cookie.trim().split('=');
+          console.log(key);
+          
+          if (key == 'loggedIn321') {
+              username = value;
+          }
+      }
+    
+    socket.emit('joinRoom', roomId);
+
+    // Listen for the room joined event and display the board
+    socket.on('roomJoined', (board, playerC) => {
+      createBoard(board);
+      const newMessage = document.createElement('p');
+      document.getElementById('playercolor').append(`${playerC}`);
+      console.log(document.getElementById('playercolor').innerHTML);
+    });
+
+    socket.on('userLeft', function(data) {
+      console.log(data.message);
+      const newMessage = document.createElement('p');
+      const chatBox = document.getElementById('chat-box');
+      newMessage.textContent= `${data.message}`;
+      chatBox.appendChild(newMessage);
+  })
+
+    // Listen for the game state update and update the board
+    socket.on('gameState', (board) => {
+      console.log(board);
+    
+      // Update the board with the new state
+      updateBoard(board);
+    
+      // Detect and animate cells that are 'red' or 'yellow'
+      animateCellsWithColorClasses();
+    
+      // Update the previous board state for the next comparison
+      previousBoardState = JSON.parse(JSON.stringify(board)); // Deep copy to preserve original state
+    });
+    
+    
+    // Function to detect and animate changed or new cells
+    function animateCellsWithColorClasses() {
+      // Select all cells that have the exact class 'cell red' or 'cell yellow'
+      const cells = document.querySelectorAll('.cell.red, .cell.yellow');
+    
+      // Animate each of those cells
+      cells.forEach((cellElement) => {
+        if (!cellElement.classList.contains('animated')) {  // Check if already animated to avoid re-animation
+          animateCellIn(cellElement);
+          cellElement.classList.add('animated');  // Mark the cell as animated
+        }
+      });
+    }
+
+
+    // Listen for turn updates
+    socket.on('turn', (turn) => {
+      updateTurn(turn);
+    });
+
+
+    // Listen for player joining event
+    socket.on('playerJoined', (color) => {
+      const chatBox = document.getElementById('chat-box');
+      console.log(chatBox)
+      const newMessage = document.createElement('p');
+      newMessage.textContent= `${color} player joined the game.`
+      chatBox.appendChild( newMessage)
+    });
+
+    // Listen for "game full" message
+    socket.on('gameFull', (message) => {
+      alert(message);
+    });
+
+    // Listen for "not your turn" message
+    socket.on('notYourTurn', (message) => {
+      alert(message);
+    });
+
+  // Track the current player's color
+let currentPlayerColor = 'red';  // Initialize as 'red' (can be updated based on your game logic)
+
+// Listen for the turn change to update the current player's color
+socket.on('turn', (color) => {
+  currentPlayerColor = color;  // Update the color whenever the turn changes
+});
+
+// Listen for chat messages from the server and display them in the chat box
+socket.on('chatMessage', (message, username) => {
+  const chatBox = document.getElementById('chat-box');
+  const newMessage = document.createElement('p');
+  newMessage.textContent = `${username}: ${message}`;
+  chatBox.appendChild(newMessage);
+  chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom of the chat box
+});
+
+function animatePiecesFallingOff() {
+  // Select cells with the class 'red' and 'yellow'
+  let redCells = document.querySelectorAll('.cell.red');
+  let yellowCells = document.querySelectorAll('.cell.yellow');
+
+  // Combine both NodeLists into an array
+  let cells = [...redCells, ...yellowCells];
+  console.log(cells);
+
+  // Animate each cell
+  cells.forEach((cell) => {
+    // Randomize bounce direction
+    const randomX = Math.random() * 400 - 200; // Random X between -100 and 100
+    const randomY = Math.random() * 200 - 100; // Random Y between -100 and 100
+
+    // Animate falling and bouncing
+    cell.animate(
+      [
+        { transform: 'translateY(0)' }, // Start at original position
+        { transform: 'translateY(50vh)' }, // Fall halfway down (50% of screen height)
+        { transform: `translateY(${randomY}px) translateX(${randomX}px)` }, // Bounce a little in random direction
+        { transform: `translateY(100vh) translateX(${randomX}px)` } // Fall off screen
+      ],
+      {
+        duration: 1500, // Total duration for animation
+        easing: 'ease-in-out',
+        iterations: 1
+      }
+    );
+  });
+
+  // Wait for the animation to complete before resolving
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(); // Resolve after animation ends
+    }, 1500); // Match animation duration (1.5s)
+  });
+}
+
+function animateCellIn(cellElement) {
+  // Reset any previous animations
+  cellElement.style.animation = 'none';
+  cellElement.offsetHeight;  // Trigger reflow to reset the animation
+  cellElement.style.animation = 'animateCellIn 1s ease-out forwards';
+}
+
+
+  socket.on('resetGame', async () => {
+    // Animate pieces falling off
+    await animatePiecesFallingOff();
+  
+    // Reset the board visually after animation
+    createBoard(createEmptyBoard());
+    document.getElementById('turn-indicator').textContent = 'It\'s Red’s turn';
+  
+    // Hide the game over message
+    const gameOverMessage = document.getElementById('game-over-message');
+    gameOverMessage.style.display = 'none';
+  });
+  
+  
+  // Reset button click event
+  document.getElementById('reset').addEventListener('click', async () => {
+    // Emit resetGame event to server
+    socket.emit('resetGame', roomId);1
+  });
+
+// Handle sending a chat message
+document.getElementById('send-chat').addEventListener('click', () => {
+  const chatInput = document.getElementById('chat-input');
+  const message = chatInput.value.trim();
+  if (message) {
+    if(message.length < 1000){
+      playerColor =document.getElementById("playercolor").innerHTML
+      socket.emit('sendChatMessage', message, roomId, username ); // Emit message with player color
+      chatInput.value = ''; // Clear the input field
+    } else {
+      chatInput.value = ' that message was too long!';
+    }
+  }
+});
+
+document.getElementById('chat-input').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    document.getElementById('send-chat').click(); // Simulate button click
+  }
+});
+
+  
+
+    socket.on('gameOver', (message) => {
+        const gameOverMessage = document.getElementById('game-over-message');
+        gameOverMessage.textContent = message; // Set the winner's message
+        gameOverMessage.style.display = 'block'; // Show the message
+      
+        // Enable the reset button when the game is over
+        document.getElementById('reset').disabled = false;
+      });
+      
+      // Optionally, you can also reset the board immediately on the client side when the reset event is triggered
+      function createBoard(board) {
+        const gameBoard = document.getElementById('game-board');
+        gameBoard.innerHTML = ''; // Clear any existing board
+        for (let row = 0; row < 6; row++) {
+          for (let col = 0; col < 7; col++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.dataset.row = row;
+            cell.dataset.col = col;
+            if (board[row][col]) {
+              cell.classList.add(board[row][col]);
+            }
+            cell.addEventListener('click', handleCellClick);
+            gameBoard.appendChild(cell);
+          }
+        }
+      }
+      
+
+    function createBoard(board) {
+      const gameBoard = document.getElementById('game-board');
+      gameBoard.innerHTML = ''; // Clear any existing board
+      for (let row = 0; row < 6; row++) {
+        for (let col = 0; col < 7; col++) {
+          const cell = document.createElement('div');
+          cell.classList.add('cell');
+          cell.dataset.row = row;
+          cell.dataset.col = col;
+          if (board[row][col]) {
+            cell.classList.add(board[row][col]);
+          }
+          cell.addEventListener('click', handleCellClick);
+          gameBoard.appendChild(cell);
+        }
+      }
+    }
+
+    function updateBoard(board) {
+        console.log('updating board');
+      const cells = document.querySelectorAll('.cell');
+      cells.forEach((cell) => {
+        const row = cell.dataset.row;
+        const col = cell.dataset.col;
+        if (board[row][col]) {
+          cell.classList.add(board[row][col]);
+        }
+      });
+    }
+
+    function handleCellClick(event) {
+      const col = event.target.dataset.col;
+      socket.emit('makeMove', roomId, col);
+    }
+
+
+
+      function createEmptyBoard() {
+        const rows = 6;
+  const cols = 7;
+  const board = Array(rows).fill().map(() => Array(cols).fill(null));
+  return board;
+      }
+    function updateTurn(turn) {
+      const turnIndicator = document.getElementById('turn-indicator');
+      turnIndicator.textContent = `It’s ${turn.charAt(0).toUpperCase() + turn.slice(1)}’s turn`;
+
+      // Disable cells if it's not the player's turn
+      const cells = document.querySelectorAll('.cell');
+      cells.forEach((cell) => {
+        const row = cell.dataset.row;
+        const col = cell.dataset.col;
+        const currentPlayer = document.getElementById("playercolor").innerHTML;
+
+        // Prevent clicking if it's not the player's turn
+        if (currentPlayer !== turn) {
+          cell.removeEventListener('click', handleCellClick);
+        } else {
+          cell.addEventListener('click', handleCellClick);
+        }
+      });
+    }
+
+    function hasLoggedInCookie() {
+      // Retrieve all cookies as a single string
+      const cookies = document.cookie.split(';');
+      console.log(document.cookie.split(';'))
+      // Iterate through each cookie
+      for (let cookie of cookies) {
+        console.log(cookie)
+          // Trim whitespace and split into key-value pair
+          const [key, value] = cookie.trim().split('=');
+          console.log(key);
+          
+          if (key == 'loggedIn321') {
+              console.log('Cookie found with value:', value);
+              return true; // Cookie exists
+          }
+      }
+      
+      console.log('Cookie "loggedIn321" not found.');
+      return false; // Cookie not found
+  }
+
+  if (hasLoggedInCookie()) {
+  } else {
+      window.location.href = '/login';
+  }
+
+  </script>
+</body>
+</html>
