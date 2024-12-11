@@ -327,7 +327,7 @@ socket.on('sendChatMessage', (message, roomId, playerColor) => {
 });
 
 
-
+const port = process.env.PORT ||
 server.listen(3000, () => {
   console.log('Server running at http://localhost:3000');
 });
