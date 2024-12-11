@@ -119,7 +119,7 @@ const cookies = document.cookie.split(';');
     }
 
     // Listen for messages from the server
-    socket.on('message', (message, username) => {
+    socket.on('message2', (message, username) => {
       if(username == undefined){
         console.log(`attempting retreive`)
         username= "Server"
@@ -133,7 +133,7 @@ const cookies = document.cookie.split(';');
       const message = messageInput.value.trim();
       console.log(`attempting to send message`)
       if (message) {
-        socket.emit('chatMessage', message, username); // Send message to the server
+        socket.emit('chatMessage2', message, username); // Send message to the server
         messageInput.value = ''; // Clear input field
       }
     });

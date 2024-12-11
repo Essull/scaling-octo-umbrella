@@ -261,6 +261,19 @@ io.on('connection', (socket) => {
         })
     })
 
+    // Broadcast when a user connects
+  socket.broadcast.emit('message2', 'A new user has joined the chat');
+
+  // Listen for chat messages
+  socket.on('chatMessage2', (msg, usern) => {
+    io.emit('message2', msg, usern); // Broadcast the message to all users
+  });
+
+  // Broadcast when a user disconnects
+  socket.on('disconnect', () => {
+    io.emit('message2', 'A user has left the chat');
+  });
+
   // Handle game reset
     socket.on('resetGame', (roomId) => {
         console.log("resetting game");

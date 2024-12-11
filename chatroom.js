@@ -19,16 +19,16 @@ io.on('connection', (socket) => {
   console.log('A user connected');
 
   // Broadcast when a user connects
-  socket.broadcast.emit('message', 'A new user has joined the chat');
+  socket.broadcast.emit('message2', 'A new user has joined the chat');
 
   // Listen for chat messages
-  socket.on('chatMessage', (msg, usern) => {
-    io.emit('message', msg, usern); // Broadcast the message to all users
+  socket.on('chatMessage2', (msg, usern) => {
+    io.emit('message2', msg, usern); // Broadcast the message to all users
   });
 
   // Broadcast when a user disconnects
   socket.on('disconnect', () => {
-    io.emit('message', 'A user has left the chat');
+    io.emit('message2', 'A user has left the chat');
   });
 });
 
