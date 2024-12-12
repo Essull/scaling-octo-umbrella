@@ -284,7 +284,7 @@ io.on('connection', (socket) => {
 
 
   // Handle making a move
-  socket.on('makeMove', (roomId, col) => {
+  socket.on('makeMove', async (roomId, col) => {
     const room = rooms.get(roomId);
     if (room) {
       const currentPlayer = room.players.find(p => p.id === socket.id);
@@ -296,8 +296,16 @@ io.on('connection', (socket) => {
   
           // Check if the current player has won
           if (checkWin(room.board, currentPlayer.color)) {
-            session.run(query, parameters)
             io.to(roomId).emit('gameOver', `${currentPlayer.color.charAt(0).toUpperCase() + currentPlayer.color.slice(1)} wins!`);
+            let random = Math.random()*1000;
+            let query = "CREATE (g:Game {game: $gamenumber, board: $board, winner: player}) RETURN g";
+            const createParams = {
+              gamenumber: random,
+              board: room.board.toString(),
+              winner: currentPlayer.color
+            };
+            const createResult = await createSession.run(query, createParams);
+            
           } else {
             // Switch turns if no one has won
             room.currentTurn = room.currentTurn === 'red' ? 'yellow' : 'red';
