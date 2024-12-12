@@ -61,6 +61,7 @@
             <input type="password" id="password" placeholder="Password" required />
             <button type="submit">Log In</button>
         </form>
+        <a href="/register">Register</a>
         <div id="error" class="error"></div>
     </div>
     <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
@@ -73,7 +74,6 @@
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            console.log(username, password);
             const response = await fetch('/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

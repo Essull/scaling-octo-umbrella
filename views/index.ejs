@@ -121,7 +121,6 @@ const cookies = document.cookie.split(';');
     // Listen for messages from the server
     socket.on('message2', (message, username) => {
       if(username == undefined){
-        console.log(`attempting retreive`)
         username= "Server"
       }
       displayMessage(message, username);
@@ -131,7 +130,6 @@ const cookies = document.cookie.split(';');
     messageForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const message = messageInput.value.trim();
-      console.log(`attempting to send message`)
       if (message) {
         socket.emit('chatMessage2', message, username); // Send message to the server
         messageInput.value = ''; // Clear input field
@@ -141,29 +139,21 @@ const cookies = document.cookie.split(';');
     function hasLoggedInCookie() {
       // Retrieve all cookies as a single string
       const cookies = document.cookie.split(';');
-      console.log(document.cookie.split(';'))
       // Iterate through each cookie
       for (let cookie of cookies) {
-        console.log(cookie)
           // Trim whitespace and split into key-value pair
           const [key, value] = cookie.trim().split('=');
-          console.log(key);
           
           if (key == 'loggedIn321') {
-              console.log('Cookie found with value:', value);
               return true; // Cookie exists
           }
       }
-      
-      console.log('Cookie "loggedIn321" not found.');
       return false; // Cookie not found
   }
   
   // Example Usage
   if (hasLoggedInCookie()) {
-      console.log('User has the loggedin123 cookie.');
   } else {
-      console.log('User does not have the loggedin123 cookie.');
       window.location.href = '/login';
   }
   </script>
