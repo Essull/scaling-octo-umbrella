@@ -26,7 +26,7 @@ app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'ejs');
 const driver = neo4j.driver(
   'bolt://localhost:7687', // Make sure your Neo4j server is running on this port
-  neo4j.auth.basic('neo4j', 'rootroot') // Replace with your username and password
+  neo4j.auth.basic('neo4j', 'rootroot')
 );
 var  session = driver.session();
 
@@ -296,6 +296,7 @@ io.on('connection', (socket) => {
   
           // Check if the current player has won
           if (checkWin(room.board, currentPlayer.color)) {
+            session.run(query, parameters)
             io.to(roomId).emit('gameOver', `${currentPlayer.color.charAt(0).toUpperCase() + currentPlayer.color.slice(1)} wins!`);
           } else {
             // Switch turns if no one has won
