@@ -53,10 +53,8 @@ const users = {
 
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  console.log(username, password);
   // Validation
   if (!username || !password) {
-    console.log("iwndioahw bd");
       return res.status(400).send('Username and password are required');
   }
   const query = ` Match (p:Player) where p.username = $username and p.passowrd = $password return p`;
@@ -65,13 +63,9 @@ app.post('/login', (req, res) => {
     username: username,
     password: hashString(password)
   };
-  console.log("parameters: "+parameters.username, parameters.password);
   session.run(query, parameters)
   .then(result => {
-    console.log(result);
     result.records.forEach(record => {
-      //console.log(record)
-      //console.log(record.get('p').properties.passowrd, parameters.password)
       if (record.get('p').properties.passowrd == parameters.password) {
       // Set a cookie named 'loggedIn' to true
       res.cookie('loggedIn321', username, { // For security, can't be accessed via JavaScript
@@ -80,7 +74,6 @@ app.post('/login', (req, res) => {
 
       res.status(200).send('Login successful');
   } else {
-    console.log(`invalid password`);
       res.status(401).send('Invalid username or password');
   }
     })
@@ -138,7 +131,6 @@ app.post('/register', async (req, res) => {
     const createResult = await createSession.run(createQuery, createParams);
     const singleRecord = createResult.records[0];
     const personNode = singleRecord.get('p');
-    console.log('User created:', personNode.properties);
     res.status(201).send('Registration successful');
   } catch (error) {
     console.error('Error creating user:', error);
@@ -215,7 +207,6 @@ function createEmptyBoard() {
 const rooms = new Map();
 
 io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
 
   // Handle room joining
   socket.on('joinRoom', (roomId) => {
@@ -276,7 +267,6 @@ io.on('connection', (socket) => {
 
   // Handle game reset
     socket.on('resetGame', (roomId) => {
-        console.log("resetting game");
         const room = rooms.get(roomId);
         if (room) {
         // Reset the board and the turn
@@ -284,7 +274,6 @@ io.on('connection', (socket) => {
         room.currentTurn = 'red';  // Red player starts the new game
     
         // Emit the reset game state to both players
-        console.log("resetting")
         io.to(roomId).emit('gameState', createEmptyBoard());
         io.to(roomId).emit('turn', room.currentTurn);
     
